@@ -1,4 +1,7 @@
 from datetime import datetime
+from helpervalidator import *
+
+"""Validates room booking requests based on fields, Rooms, EQUIPMENT, and REQUIREDFIELDS."""
 
 ROOMS = {
     "A101": 10,
@@ -10,20 +13,15 @@ ROOMS = {
 EQUIPMENT = {"projector", "whiteboard", "speaker", "microphone"}
 REQUIREDFIELDS = {"room", "date", "start_time", "end_time", "attendees", "equipment"}
 
-# Helper function
-def is_valid_time_range(start_time: str, end_time: str) -> bool:
-    try:
-        start = datetime.strptime(start_time, "%H:%M")
-        end = datetime.strptime(end_time, "%H:%M")
-        return start < end
-    except ValueError:
-        return False
-
 # Main Validation function
 def reserve_room(request: dict) -> str:
+    """Checks if a room booking request is valid and returns a status message."""
+    
+    # Check if all the Field is Exist.
     if set(request.keys()) != REQUIREDFIELDS:
         return "Invalid request: Missing or unexpected fields."
 
+    # Fill the Fields
     room = request.get("room")
     date = request.get("date")
     starttime = request.get("start_time")
@@ -31,9 +29,11 @@ def reserve_room(request: dict) -> str:
     attendees = request.get("attendees")
     equipment = request.get("equipment")
 
+    # Validate Rooms
     if room not in ROOMS:
         return "Invalid request: Unsupported room."
 
+    # Validate date
     try:
         date_obj = datetime.strptime(date, "%Y-%m-%d").date()
         if date_obj <= datetime.today().date():
@@ -41,14 +41,17 @@ def reserve_room(request: dict) -> str:
     except ValueError:
         return "Invalid request: Date format must be YYYY-MM-DD."
 
+    # Validate Start and End Time
     if not is_valid_time_range(starttime, endtime):
         return "Invalid request: Invalid or inconsistent time range."
 
+    # Validate Attendees
     if not isinstance(attendees, int) or attendees <= 0:
         return "Invalid request: Attendees must be a positive integer."
     if attendees > ROOMS[room]:
         return "Room capacity exceeded"
 
+    # Validate equipment
     if not isinstance(equipment, list):
         return "Invalid request: Equipment must be a list."
     equipment = [item.lower() for item in equipment]
